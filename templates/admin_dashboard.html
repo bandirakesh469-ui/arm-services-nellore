@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — ARM Services Nellore</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body class="dash-body">
+
+<aside class="sidebar">
+  <p class="auth-brand sidebar-brand">ARM <span>SERVICES</span> NELLORE</p>
+  <nav class="sidebar-nav">
+    <a class="active" href="{{ url_for('admin_dashboard') }}">Orders</a>
+    <a href="{{ url_for('admin_change_password') }}">Change Password</a>
+    <a href="{{ url_for('index') }}" target="_blank">View Website ↗</a>
+  </nav>
+  <div class="sidebar-footer">
+    <p>Logged in as</p>
+    <p class="sidebar-user">{{ admin_username }}</p>
+    <a href="{{ url_for('admin_logout') }}" class="logout-link">Log out</a>
+  </div>
+</aside>
+
+<main class="dash-main">
+  <header class="dash-header">
+    <h1>Orders</h1>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, msg in messages %}
+        <div class="flash flash-{{ category }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="stat-grid">
+    <div class="stat-card"><p class="stat-num">{{ counts.all }}</p><p class="stat-label">Total Orders</p></div>
+    <div class="stat-card stat-pending"><p class="stat-num">{{ counts.pending }}</p><p class="stat-label">Pending</p></div>
+    <div class="stat-card stat-accepted"><p class="stat-num">{{ counts.accepted }}</p><p class="stat-label">Accepted</p></div>
+    <div class="stat-card stat-rejected"><p class="stat-num">{{ counts.rejected }}</p><p class="stat-label">Rejected</p></div>
+  </div>
+
+  <div class="filter-tabs">
+    <a href="{{ url_for('admin_dashboard', status='all') }}" class="{{ 'active' if active_status == 'all' }}">All ({{ counts.all }})</a>
+    <a href="{{ url_for('admin_dashboard', status='pending') }}" class="{{ 'active' if active_status == 'pending' }}">Pending ({{ counts.pending }})</a>
+    <a href="{{ url_for('admin_dashboard', status='accepted') }}" class="{{ 'active' if active_status == 'accepted' }}">Accepted ({{ counts.accepted }})</a>
+    <a href="{{ url_for('admin_dashboard', status='rejected') }}" class="{{ 'active' if active_status == 'rejected' }}">Rejected ({{ counts.rejected }})</a>
+  </div>
+
+  <div class="table-wrap">
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Hotel / Business</th>
+          <th>Contact</th>
+          <th>Services requested</th>
+          <th>Received</th>
+          <th>Status</th>
+          <th>Update</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td>{{ order.id }}</td>
+          <td>
+            <strong>{{ order.hotel_name }}</strong>
+            {% if order.message %}<p class="row-note">{{ order.message }}</p>{% endif %}
+          </td>
+          <td>
+            {{ order.contact_name }}<br>
+            <span class="row-muted">{{ order.phone }}</span>
+            {% if order.email %}<br><span class="row-muted">{{ order.email }}</span>{% endif %}
+          </td>
+          <td>{{ order.services or "—" }}</td>
+          <td class="row-muted">{{ order.created_at }}</td>
+          <td><span class="badge badge-{{ order.status }}">{{ order.status }}</span></td>
+          <td>
+            <form method="POST" action="{{ url_for('update_order_status', order_id=order.id, status=active_status) }}" class="status-form">
+              <select name="status">
+                {% for s in ['pending', 'accepted', 'rejected'] %}
+                <option value="{{ s }}" {{ 'selected' if s == order.status }}>{{ s|capitalize }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit">Save</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="empty-row">No orders in this view yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</main>
+
+</body>
+</html>
